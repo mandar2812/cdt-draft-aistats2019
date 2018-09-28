@@ -161,11 +161,11 @@ y(t + \Delta(t)) & = f[x(t)]
 
 In practical time-series applications, one works with sub-sampled or discretized versions of the time 
 series $x(t)$ and $y(t)$. The time delay function $g(.)$ can now be recast as a function which for every
-input pattern $x(t_i)$, returns a time delay $\Delta$ corresponding the the time step $i + \Delta$ when
-the effect $y(t_i + \Delta)$ is observed.
+input pattern $x(t_i)$, returns a time delay $\delta$ corresponding the the time step $t_i + \delta$ when
+the effect $y(t_i + \delta)$ is observed.
 
 For practical purposes one must define for every time step $t$, a \emph{causal time window} $[t+\ell, t+\ell+h]$, 
-within which the model searches for probably temporal causal links.
+within which the model searches for probable temporal causal links.
 
 Our proposed model then produces the following predictions:
 
@@ -175,32 +175,57 @@ Our proposed model then produces the following predictions:
 \end{enumerate}
 
 The model thus tries to learn a predictor for each lagged output $y(t+i)$ in the 
-causal window $[t+\ell, t+\ell+h]$, and simultaneosly supplies a probability 
-$\hat{p}(t+i)$ which represents the likelihood of a causal 
-link between $x(t)$ and $y(t+i)$.
+causal window $[t+\ell, t+\ell+h]$, and simultaneosly supplies a probability distribution 
+over each time step of the causal window, $\hat{p}(t+i)$.
+
+The distribution $\hat{p}(t+i), i \in {\ell, \cdots, \ell+h-1}$ represents the 
+likelihood of a causal link between $x(t)$ and $y(t+i)$. Since the model looks
+for causal links in the finite window $[t+\ell, t+\ell+h)$, we have 
+$\sum^{\ell+h-1}_{i = \ell}{\hat{p}(t + i)} = 1$.
 
 
 \section{Loss Function}
 
-Balance two incentives
+In order to train time lag based models, one must balance two incentives.
 
 \begin{enumerate}
     \item Generate accurate predictions for time window $y(t+\ell), \cdots, y(t+\ell+h-1)$
-    \item Learn time lag structure according to some intuition.
+    \item Learn the time lag structure.
 \end{enumerate}
 
-\begin{align*}
-\mathcal{L}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)}) = &\lambda_1 \sum_{i,m}{\frac{1}{2M} (y^{(m)}_{i} - \hat{y}^{(m)}_{i})^2 (1 + \hat{p}^{(m)}_i)} \\ &+ \\ &\lambda_2 \mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)})
-\end{align*}
+These incentives have very different contexts. We have access to measurements of the output
+time series $y(t)$, but that is generally not the case for the time lag structure. Although
+it is possible that certain data sets may have patterns annotated with time lag information, 
+this is not the norm.
+
+We express the loss function as a sum of two terms (equation \ref{eq:loss}). The first; which computes a weighted $L_2$ 
+error between the predictions $\hat{y}^{(m)}_{i}$ and the targets $y^{(m)}_{i}$. The second term
+$\mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)})$ must penalise the predicted probabilities
+$\hat{p}^{(m)}$ in a meaningful manner.
+
+\begin{equation}\label{eq:loss}
+\begin{aligned}
+&\mathcal{L}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)}) = \\
+&\lambda_1 \sum_{i,m}{\frac{1}{2M} (y^{(m)}_{i} - \hat{y}^{(m)}_{i})^2 (1 + \hat{p}^{(m)}_i)} \\ 
+&+ \\ 
+&\lambda_2 \mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)})
+\end{aligned}
+\end{equation}
+
+\subsection{Target Probability}
 
 The term $\mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)})$ penalizes the predicted probabilities $\hat{p}^{(1:M)}$, for deviation from some chosen \textit{target probability}.
 
-From the intuitions of Granger causality, we use the concept of causality as predictability, we can thus characterize the \emph{target probability}, $\widetilde{p}$ for a time window $[t+\ell, t+\ell+h-1]$ in the following manner: The lagged output $y(t+i)$ which has greater predictability given $x(t)$, is a more likely causal link. 
+From the intuitions of Granger causality, we use the concept of causality as predictability, we can thus characterize the \emph{target probability}, $\widetilde{p}$ for a time window $[t+\ell, t+\ell+h)$ in the following manner: 
+The lagged output $y(t+i)$ which has greater predictability given $x(t)$, is a more likely causal link. 
+
+\begin{equation}
+\widetilde{p}_{i}^{(m)} = \frac{exp \left( \frac{1}{T} (y_{i}^{(m)} - \hat{y}_{i}^{(m)})^{2} \right)}{\sum_{i}{exp \left( \frac{1}{T} (y_{i}^{(m)} - \hat{y}_{i}^{(m)})^{2} \right)}} 
+\end{equation}
 
 \begin{align}
 & \mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)}) = \sum_{m = 1}^{M}{\frac{1}{M} \mathcal{H}(\hat{p}^{(m)}, \widetilde{p}^{(m)})} \\
 & \mathcal{H}(p, q) = \sqrt{\sum_{i}{(\sqrt{p_i} -  \sqrt{q_i})^2}}\\
-& \widetilde{p}^{(m)} = softmax \left( \frac{1}{T} (y^{(m)} - \hat{y}^{(m)})^{2} \right)
 \end{align}
 
 
