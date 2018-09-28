@@ -17,12 +17,12 @@
 %\setlength{\pdfpagewidth}{8.5in}
 
 % If you use natbib package, activate the following three lines:
-%\usepackage[round]{natbib}
-%\renewcommand{\bibname}{References}
-%\renewcommand{\bibsection}{\subsubsection*{\bibname}}
+\usepackage[round]{natbib}
+\renewcommand{\bibname}{References}
+\renewcommand{\bibsection}{\subsubsection*{\bibname}}
 
 % If you use BibTeX in apalike style, activate the following line:
-%\bibliographystyle{apalike}
+\bibliographystyle{apalike}
 
 \begin{document}
 
@@ -69,9 +69,7 @@ space after the second level heading.
 
 \subsubsection{Previous Work}
 
-Third level headings are flush left, initial caps, bold, and in point
-size 10. Use one line space before the third level heading and one-half line
-space after the third level heading.
+Non-parametric determination of time lag \cite{ZHOU2006195}.
 
 \subsection{CITATIONS, FIGURES, REFERENCES}
 
@@ -185,7 +183,7 @@ Our proposed model then produces the following predictions:
 \end{enumerate}
 
 The model thus tries to learn a predictor for each lagged output $y(t+i)$ in the 
-causal window $[t+\ell, t+\ell+h]$, and simultaneosly supplies a probability distribution 
+causal window $[t+\ell, t+\ell+h]$, and simultaneously supplies a probability distribution 
 over each time step of the causal window, $\hat{p}(t+i)$.
 
 The distribution $\hat{p}(t+i), i \in {\ell, \cdots, \ell+h-1}$ represents the 
@@ -210,8 +208,9 @@ this is not the norm.
 
 We express the loss function as a sum of two terms (equation \ref{eq:loss}). The first; which computes a weighted $L_2$ 
 error between the predictions $\hat{y}^{(m)}_{i}$ and the targets $y^{(m)}_{i}$. The second term
-$\mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)})$ must penalise the predicted probabilities
-$\hat{p}^{(m)}$ in a meaningful manner.
+$\mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)})$ must penalize the predicted probabilities
+$\hat{p}^{(m)}$ in a meaningful manner, this can be done by considering some \emph{target probability} and
+calculating some distance/divergence from such a target.
 
 \begin{equation}\label{eq:loss}
 \begin{aligned}
@@ -224,18 +223,18 @@ $\hat{p}^{(m)}$ in a meaningful manner.
 
 \subsection{Target Probability}
 
-The term $\mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)})$ penalizes the predicted probabilities $\hat{p}^{(1:M)}$, for deviation from some chosen \textit{target probability}.
+From the intuitions of Granger causality, we use the concept of causality as predictability, we can thus characterize the \emph{target probability}, $\widetilde{p}$ for a time window $[t+\ell, t+\ell+h)$ in the following manner: The lagged output $y(t+i)$ which has greater predictability given $x(t)$, is a more likely causal link. This idea is represented in equation \ref{eq:targetprob}, by means of the softmax function and an \emph{annealing temperature} $T$.
 
-From the intuitions of Granger causality, we use the concept of causality as predictability, we can thus characterize the \emph{target probability}, $\widetilde{p}$ for a time window $[t+\ell, t+\ell+h)$ in the following manner: 
-The lagged output $y(t+i)$ which has greater predictability given $x(t)$, is a more likely causal link. 
-
-\begin{equation}
+\begin{equation}\label{eq:targetprob}
 \widetilde{p}_{i}^{(m)} = \frac{exp \left( \frac{1}{T} (y_{i}^{(m)} - \hat{y}_{i}^{(m)})^{2} \right)}{\sum_{i}{exp \left( \frac{1}{T} (y_{i}^{(m)} - \hat{y}_{i}^{(m)})^{2} \right)}} 
 \end{equation}
 
-\begin{align}
+The temperature $T$ therefore serves to determine how sharp the target probability distribution is around its peak. The predictions $\hat{y}^{(m)}_{i}$, made by the model are penalized for their divergence from the \emph{target probability} via the \emph{Hellinger distance} metric (equation \ref{eq:hellinger}).
+
+
+\begin{align}\label{eq:hellinger}
 & \mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)}) = \sum_{m = 1}^{M}{\frac{1}{M} \mathcal{H}(\hat{p}^{(m)}, \widetilde{p}^{(m)})} \\
-& \mathcal{H}(p, q) = \sqrt{\sum_{i}{(\sqrt{p_i} -  \sqrt{q_i})^2}}\\
+& \mathcal{H}(p, q) = \sqrt{\sum_{i}{(\sqrt{p_i} -  \sqrt{q_i})^2}}
 \end{align}
 
 
@@ -247,55 +246,6 @@ that you follow these instructions.  (If you are not using \LaTeX,
 please make sure to achieve the same effect using your chosen
 typesetting package.)
 
-\begin{enumerate}
-    \item Download \texttt{fancyhdr.sty} -- the
-    \texttt{aistats2019.sty} file will make use of it.
-    \item Begin your document with
-    \begin{flushleft}
-    \texttt{\textbackslash documentclass[twoside]\{article\}}\\
-    \texttt{\textbackslash usepackage[accepted]\{aistats2019\}}
-    \end{flushleft}
-    The \texttt{twoside} option for the class article allows the
-    package \texttt{fancyhdr.sty} to include headings for even and odd
-    numbered pages. The option \texttt{accepted} for the package
-    \texttt{aistats2019.sty} will write a copyright notice at the end of
-    the first column of the first page. This option will also print
-    headings for the paper.  For the \emph{even} pages, the title of
-    the paper will be used as heading and for \emph{odd} pages the
-    author names will be used as heading.  If the title of the paper
-    is too long or the number of authors is too large, the style will
-    print a warning message as heading. If this happens additional
-    commands can be used to place as headings shorter versions of the
-    title and the author names. This is explained in the next point.
-    \item  If you get warning messages as described above, then
-    immediately after $\texttt{\textbackslash
-    begin\{document\}}$, write
-    \begin{flushleft}
-    \texttt{\textbackslash runningtitle\{Provide here an alternative
-    shorter version of the title of your paper\}}\\
-    \texttt{\textbackslash runningauthor\{Provide here the surnames of
-    the authors of your paper, all separated by commas\}}
-    \end{flushleft}
-    Note that the text that appears as argument in \texttt{\textbackslash
-      runningtitle} will be printed as a heading in the \emph{even}
-    pages. The text that appears as argument in \texttt{\textbackslash
-      runningauthor} will be printed as a heading in the \emph{odd}
-    pages.  If even the author surnames do not fit, it is acceptable
-    to give a subset of author names followed by ``et al.''
-
-    \item Use the file sample\_paper.tex as an example.
-
-    \item The camera-ready versions of the accepted papers are 8
-      pages, plus any additional pages needed for references.
-
-    \item If you need to include additional appendices,
-      you can include them in the supplementary
-      material file.
-
-    \item Please, don't change the layout given by the above
-      instructions and by the style file.
-
-\end{enumerate}
 
 \subsubsection*{Acknowledgements}
 
@@ -304,27 +254,6 @@ acknowledgements go at the end of the paper.
 
 \subsubsection*{References}
 
-References follow the acknowledgements.  Use an unnumbered third level
-heading for the references section.  Any choice of citation style is
-acceptable as long as you are consistent.  Please use the same font
-size for references as for the body of the paper---remember that
-references do not count against your page length total.
+\bibliography{references}
 
-\begin{thebibliography}{}
-\setlength{\itemindent}{-\leftmargin}
-\makeatletter\renewcommand{\@biblabel}[1]{}\makeatother
-\bibitem{} J.~Alspector, B.~Gupta, and R.~B.~Allen (1989).
-    \newblock Performance of a stochastic learning microchip.
-    \newblock In D. S. Touretzky (ed.),
-    \textit{Advances in Neural Information Processing Systems 1}, 748--760.
-    San Mateo, Calif.: Morgan Kaufmann.
-
-\bibitem{} F.~Rosenblatt (1962).
-    \newblock \textit{Principles of Neurodynamics.}
-    \newblock Washington, D.C.: Spartan Books.
-
-\bibitem{} G.~Tesauro (1989).
-    \newblock Neurogammon wins computer Olympiad.
-    \newblock \textit{Neural Computation} \textbf{1}(3):321--323.
-\end{thebibliography}
 \end{document}
