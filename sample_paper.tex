@@ -49,7 +49,7 @@
 \aistatsaddress{CWI Amsterdam, INRIA Paris Saclay} ]
 
 \begin{abstract}
-  We formalize the joint regression task of predicting the magnitude of signals as well as the time delay with respect to their driving phenomena. 
+  We formalize the joint regression task of predicting the magnitude of signals as well as the time delay with respect to their driving phenomena. We call the problem \emph{causal dynamic time lag} (CDT), to take note of the non-stationary time delay between the occurrence of causes/drivers and the observation of effects in physical and man-made systems. We propose a solution to the CDT problem and a methodology to benchmark and evaluate causal time lag estimation algorithms.
 \end{abstract}
 
 \section{Introduction}
@@ -241,10 +241,17 @@ The temperature $T$ therefore serves to determine how sharp the target probabili
 
 \section{Experiments}
 
-For the camera-ready paper, if you are using \LaTeX, please make sure
-that you follow these instructions.  (If you are not using \LaTeX,
-please make sure to achieve the same effect using your chosen
-typesetting package.)
+\begin{enumerate}
+\item Labelled data sets are small in size.
+\newline
+\item Most real world data sets dont have explicit labels for causal time lag.
+\end{enumerate}
+
+
+\begin{align*}
+ x(t+1) &= (1 - \beta) x(t) + \mathcal{N}(0, \sigma^2) \\
+ y(t+\Delta(t)) &= \alpha ||x(t)||^2
+\end{align*}
 
 
 \subsubsection*{Acknowledgements}
