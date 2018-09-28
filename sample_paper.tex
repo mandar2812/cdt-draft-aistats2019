@@ -144,7 +144,7 @@ Soma             &Cell body (contains cell nucleus) \\
 
 \emph{Causal Dynamic Time Lag} is essentially a regression problem with two tasks. Given two time series, 
 the causes $x(t)$ and the observed effects $y(t)$, the regression model must learn a mapping $f()$ which
-maps each input patten $x(t_1)$ to an output $y(t_2)$, and a mapping $g()$ which maps the time delay between
+maps each input pattern $x(t_1)$ to an output $y(t_2)$, and a mapping $g()$ which maps the time delay between
 the input and output patterns $t_2 = t_1 + g(x(t_1))$. This is formally specified in equations below.
 
 \begin{align}
@@ -163,7 +163,6 @@ f: \mathcal{X} & \rightarrow \mathbb{R}\\
 g: \mathcal{X} & \rightarrow \mathbb{R}^{+}\\
 \Delta(t) & = g[x(t)] \\
 y(t + \Delta(t)) & = f[x(t)]
-
 \end{align}
 
 
