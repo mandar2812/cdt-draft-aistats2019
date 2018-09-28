@@ -244,7 +244,7 @@ The temperature $T$ therefore serves to determine how sharp the target probabili
 Just as the MNIST, CIFAR Santa Fe Laser and other data sets serve as a way to evaluate machine learning
 algorithms, it is necessary to propose benchmark problems for the \emph{causal dynamic time lag}.
 
-This is paticularly challangeing given the nature of the CDT problem, although causal time lag
+This is particularly challenging given the nature of the CDT problem, although causal time lag
 relationships do exist in real world data sets (citations here), it is difficult to find data sets
 with time lag relationships explicitly annotated.
 
@@ -253,11 +253,9 @@ which incorporate dynamic time lag relationships between causes and effects.
 
 Synthetic data sets allow us to evaluate the accuracy of both, the output and time
 lag predictions of CDT models. To this end, we the authors propose four benchmark 
-tests which we hope can become cannonical examples in the area of CDT modelling.
+tests which we hope can become canonical examples in the area of CDT modelling.
 
-\subsection{Benchmark Problems}
-
-\subsubsection{Data Generation}
+\subsection{Data Generation}
 
 We start by generating the time series $x(t)$ which represent the driving/causal
 forces in our system. This can be achieved with good flexibility using 
@@ -272,17 +270,26 @@ In equation \ref{eq:outputs} we define the output $y(.)$ as the square norm
 of the appropriately time lagged input, where $\Delta(t)$ determines the causal
 time lag relationship.
 
+\subsection{Benchmark Problems}
+
 Based on the above framework we construct four benchmark problems.
 
 \begin{enumerate}
-\item Problem I Constant Lag: \newline $\Delta(t) = k$
+\item \textbf{Problem I} Constant Lag: \newline 
+$\Delta(t) = k$
 
+\item \textbf{Problem II} Constant Velocity $||x(t)||^2$; Fixed Distance $d$: 
+\newline $\Delta(t) = d/(\alpha ||x(t)||^2)$
 
-\item Problem II Constant Velocity $||x(t)||^2$; Fixed Distance $d$: \newline $\Delta(t) = d/(\alpha ||x(t)||^2)$
+\item \textbf{Problem III} Constant Acceleration $a$; Fixed Distance $d$: 
+\newline $\Delta(t) = (\sqrt{\alpha^2||x(t)||^4 - 2ad} - \alpha||x(t)||^2)/a$
 
+\item \textbf{Problem IV} Softplus time lag: 
+\newline $\Delta(t) = exp\left(||x(t)||^2\right)/\left(1 + exp(||x(t)||^2)\right)$
 
-\item Problem III Constant Acceleration $a$; Fixed Distance $d$: \newline $\Delta(t) = (\sqrt{\alpha^2||x(t)||^4 - 2ad} - \alpha||x(t)||^2)/a$
 \end{enumerate}
+
+\subsection{Results}
 
 
 
