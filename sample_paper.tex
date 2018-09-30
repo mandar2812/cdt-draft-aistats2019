@@ -44,7 +44,7 @@
 
 \aistatstitle{Causal Dynamic Time Lag: Predicting What \& When}
 
-\aistatsauthor{ M. Chandorkar, C. Furthlener, E. Camporeale and  M. Sebag }
+\aistatsauthor{ M. Chandorkar, C. Furtlehner, E. Camporeale and  M. Sebag }
 
 \aistatsaddress{CWI Amsterdam, INRIA Paris Saclay} ]
 
@@ -53,6 +53,12 @@
 \end{abstract}
 
 \section{Introduction}
+
+Here we motivate the problem by the space weather application. We explain the what and when on the solar wind example... We want to predict solar wind close to the earth from causes seen on solar images like specific sun spots or particular structures\ldots
+Typically once an eruption occurs on the sun it will take about 10hours to two days to travel to the satellite which measures the solar wind at the Lagrange point L1. The exact travel time of the phenomena depend itself in a non fully 
+deterministic way on the causing event. Our problem has therefore two components, first identify in solar images the indications of something causing some possible perturbation on the solar wind at L1 (the \emph{what}). The second component is when will this effect be observable at L1 (the \emph{when}). 
+Both components of the problem are tricky ones. The first aspect is the subject of another work in progress. 
+In this paper we focus on the second aspect of the problem, namely assuming that we have already been able to extract in some ways (typically by convolutional network auto-encoders) a relevant low-dimensional signal from the solar images, and we tackle the regression problem of solar wind at L1 from this signal with delay. To our knowledge, the problem of regression with hidden non-constant time delay has not been addressed in the machine learning literature. This type  of problem has actually been encountered in the context of financial time series prediction in \cite{ZHOU2006195}.
 
 
 \section{Causality in Time Series}
@@ -63,7 +69,7 @@ after the first level heading.
 
 \subsection{Granger Causality}
 
-Second level headings are initial caps, flush left, bold, and in point
+Second level headings are initial caps, flush  left, bold, and in point
 size 10. Use one line space before the second level heading and one-half line
 space after the second level heading.
 
@@ -144,47 +150,44 @@ Soma             &Cell body (contains cell nucleus) \\
 the causes $x(t)$ and the observed effects $y(t)$, the regression model must learn a mapping $f()$ which
 maps each input pattern $x(t_1)$ to an output $y(t_2)$, and a mapping $g()$ which maps the time delay between
 the input and output patterns $t_2 = t_1 + g(x(t_1))$. This is formally specified in equations below.
+\begin{align*}
+y(t + \Delta(t)) & = f[x(t)]\\
+\Delta(t) & = g[x(t)] 
+\end{align*}
+with
+\[
+f: \mathcal{X}  \rightarrow \mathbb{R},\qquad\text{and}\qquad
+g: \mathcal{X}  \rightarrow \mathbb{R}^{+},
+\]
+$t \in \mathbb{R}$ represents the continuous time. The input signal $x(t)\in \mathcal{X}$ is possibly high dimensional and contains the hidden cause to the effect $y(t)\in\mathbb{R}$ which is considered as a scalar in this paper. 
+$\Delta(t)\in \mathbb{R}^+$ represents the time delay between cause and effect. Here we do not assume necessarily that the composed function 
 
-\begin{align}
-t & \in \mathbb{R}^{+}\\
-x(t) & \in \mathcal{X} \\
-f: \mathcal{X} & \rightarrow \mathbb{R}\\
-g: \mathcal{X} & \rightarrow \mathbb{R}^{+}\\
-\Delta(t) & = g[x(t)] \\
-y(t + \Delta(t)) & = f[x(t)]
-\end{align}
-
-\begin{align}
-t & \in \mathbb{R}^{+}\\
-x(t) & \in \mathcal{X} \\
-f: \mathcal{X} & \rightarrow \mathbb{R}\\
-g: \mathcal{X} & \rightarrow \mathbb{R}^{+}\\
-\Delta(t) & = g[x(t)] \\
-y(t + \Delta(t)) & = f[x(t)]
-\end{align}
-
-
+Remark 1:\\
+In practical applications as the space weather example, the time $\Delta(t)$ is usually  not observed  and can be viewed as a latent variable. We will come back later on this.\\[0.2cm]  
+Remark 2:\\
+The time warping function 
+\[
+h(t) = t+\Delta(t),
+\]
+has the following properties ... 
 
 \section{Proposed Solution}
 
 In practical time-series applications, one works with sub-sampled or discretized versions of the time 
 series $x(t)$ and $y(t)$. The time delay function $g(.)$ can now be recast as a function which for every
-input pattern $x(t_i)$, returns a time delay $\delta$ corresponding the the time step $t_i + \delta$ when
+input pattern $x(t_i)$, returns a time delay $\delta$ corresponding the time step $t_i + \delta$ when,
 the effect $y(t_i + \delta)$ is observed.
 
-For practical purposes one must define for every time step $t$, a \emph{causal time window} $[t+\ell, t+\ell+h]$, 
-within which the model searches for probable temporal causal links.
+For practical purposes one must define for every time step $t$, a \emph{causal time window} $[t+\ell, t+\ell+h]$, within which the model searches for probable temporal causal links.
 
-Our proposed model then produces the following predictions:
+Our proposed model then produces for a given input $x(t)$ at time $t$ the following predictions:
 
 \begin{enumerate}
 \item Targets $y(t+\ell), \cdots, y(t+\ell+h-1)$
 \item Time Lag Probabilities $\hat{p}(t+\ell), \cdots, \hat{p}(t+\ell+h-1)$
 \end{enumerate}
 
-The model thus tries to learn a predictor for each lagged output $y(t+i)$ in the 
-causal window $[t+\ell, t+\ell+h]$, and simultaneously supplies a probability distribution 
-over each time step of the causal window, $\hat{p}(t+i)$.
+The model thus tries to learn a predictor for each lagged output $y(t+i)$ in the causal window $[t+\ell, t+\ell+h]$, and simultaneously supplies a probability distribution over each time step of the causal window, $\hat{p}(t+i)$.
 
 The distribution $\hat{p}(t+i), i \in {\ell, \cdots, \ell+h-1}$ represents the 
 likelihood of a causal link between $x(t)$ and $y(t+i)$. Since the model looks
@@ -201,25 +204,29 @@ In order to train time lag based models, one must balance two incentives.
     \item Learn the time lag structure.
 \end{enumerate}
 
-These incentives have very different contexts. We have access to measurements of the output
-time series $y(t)$, but that is generally not the case for the time lag structure. Although
-it is possible that certain data sets may have patterns annotated with time lag information, 
-this is not the norm.
+These incentives have very different contexts. We have access to measurements of the output time series $y(t)$, but that is generally not the case for the time lag structure. Although it is possible that certain data sets may have patterns annotated with time lag information, this is not the norm.
 
-We express the loss function as a sum of two terms (equation \ref{eq:loss}). The first; which computes a weighted $L_2$ 
-error between the predictions $\hat{y}^{(m)}_{i}$ and the targets $y^{(m)}_{i}$. The second term
-$\mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)})$ must penalize the predicted probabilities
-$\hat{p}^{(m)}$ in a meaningful manner, this can be done by considering some \emph{target probability} and
-calculating some distance/divergence from such a target.
-
+We express the loss function as a sum of two terms (equation \ref{eq:loss}):
 \begin{equation}\label{eq:loss}
 \begin{aligned}
-&\mathcal{L}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)}) = \\
+\mathcal{L}(y^{(1:M)}, &\hat{y}^{(1:M)}, \hat{p}^{(1:M)}) =\\ 
 &\lambda_1 \sum_{i,m}{\frac{1}{2M} (y^{(m)}_{i} - \hat{y}^{(m)}_{i})^2 (1 + \hat{p}^{(m)}_i)} \\ 
-&+ \\ 
-&\lambda_2 \mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)})
++ &\lambda_2 \mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)}).
 \end{aligned}
 \end{equation}
+
+NOTATION: could use ${\bf y} = y^{(1:M)}$ as a compact notation.
+
+QUESTION (Cyril): what is $i$, $m$ and $M$ (time and sample indexes)?
+
+The first term, weighted with parameter $\lambda_1$ involves a weighted $L_2$ 
+error between the predictions $\hat{y}^{(m)}_{i}$ and the targets $y^{(m)}_{i}$. The second term, weighted with parameter $\lambda_2$
+has to penalize the predicted probabilities $\hat{p}^{(m)}$ in a meaningful manner. This can be done by considering some \emph{target probability} and
+calculating some distance/divergence from such a target.
+
+Remark: cherry-picking pitfall: we want to avoid the model to select in the loss function easier point to predict and discard the others. For instance there could be a tendency for any time $t$ favor the first instant $t+\ell$
+of the causal time window, by letting the causal probability to concentrate 
+on this time step. The ad hoc factor $(1+\hat p_i^{(m)})$ instead of $p_i^{(m)}$ in the first term contributes to avoid the cherry picking effect.
 
 \subsection{Target Probability}
 
@@ -229,6 +236,10 @@ From the intuitions of Granger causality, we use the concept of causality as pre
 \widetilde{p}_{i}^{(m)} = \frac{exp \left( \frac{1}{T} (y_{i}^{(m)} - \hat{y}_{i}^{(m)})^{2} \right)}{\sum_{i}{exp \left( \frac{1}{T} (y_{i}^{(m)} - \hat{y}_{i}^{(m)})^{2} \right)}} 
 \end{equation}
 
+Remark: $\widetilde{p}$ is used here as a prior, and the $1/T$ parameter has to be adjusted, we should say words on how we adjust this one. 
+
+NOTATION: I would rather use $\beta=1/T$ as a parameter, does not need to refer to temperature actually.
+
 The temperature $T$ therefore serves to determine how sharp the target probability distribution is around its peak. The predictions $\hat{y}^{(m)}_{i}$, made by the model are penalized for their divergence from the \emph{target probability} via the \emph{Hellinger distance} metric (equation \ref{eq:hellinger}).
 
 
@@ -237,6 +248,8 @@ The temperature $T$ therefore serves to determine how sharp the target probabili
 & \mathcal{H}(p, q) = \sqrt{\sum_{i}{(\sqrt{p_i} -  \sqrt{q_i})^2}}
 \end{align}
 
+\section{The (Neural Network) Model}
+I would explain here the architecture of you neural network based solution.
 
 
 \section{Experiments}
@@ -248,12 +261,9 @@ This is particularly challenging given the nature of the CDT problem, although c
 relationships do exist in real world data sets (citations here), it is difficult to find data sets
 with time lag relationships explicitly annotated.
 
-This barrier can be surpassed in turn by careful construction of synthetic data sets
-which incorporate dynamic time lag relationships between causes and effects.
+This barrier can be surpassed in turn by careful construction of synthetic data sets which incorporate dynamic time lag relationships between causes and effects with various complexity.
 
-Synthetic data sets allow us to evaluate the accuracy of both, the output and time
-lag predictions of CDT models. To this end, we the authors propose four benchmark 
-tests which we hope can become canonical examples in the area of CDT modelling.
+Synthetic data sets allow us to evaluate the accuracy of both, the output and time lag predictions of CDT models. To this end, we the authors propose four benchmark tests, which are first driven by realistic criterion from the solar wind prediction problem, but also which we hope can become canonical examples in the area of CDT modelling.
 
 \subsection{Data Generation}
 
