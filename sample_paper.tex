@@ -63,15 +63,9 @@ In this paper we focus on the second aspect of the problem, namely assuming that
 
 \section{Causality in Time Series}
 
-First level headings are all caps, flush left, bold, and in point size
-12. Use one line space before the first level heading and one-half line space
-after the first level heading.
 
 \subsection{Granger Causality}
 
-Second level headings are initial caps, flush  left, bold, and in point
-size 10. Use one line space before the second level heading and one-half line
-space after the second level heading.
 
 \subsubsection{Previous Work}
 
@@ -102,34 +96,9 @@ long.\footnote{Sample of the second footnote.}
 
 \subsubsection{Figures}
 
-All artwork must be centered, neat, clean, and legible.  All lines
-should be very dark for purposes of reproduction, and art work should
-not be hand-drawn.  Figures may appear at the top of a column, at the
-top of a page spanning multiple columns, inline within a column, or
-with text wrapped around them, but the figure number and caption
-always appear immediately below the figure.  Leave 2 line spaces
-between the figure and the caption. The figure caption is initial caps
-and each figure should be numbered consecutively.
-
-Make sure that the figure caption does not get separated from the
-figure. Leave extra white space at the bottom of the page rather than
-splitting the figure and figure caption.
-\begin{figure}[h]
-\vspace{.3in}
-\centerline{\fbox{This figure intentionally left non-blank}}
-\vspace{.3in}
-\caption{Sample Figure Caption}
-\end{figure}
 
 \subsubsection{Tables}
 
-All tables must be centered, neat, clean, and legible. Do not use hand-drawn tables.
-Table number and title always appear above the table.
-See Table~\ref{sample-table}.
-
-Use one line space before the table title, one line space after the table title,
-and one line space after the table. The table title must be
-initial caps and each table numbered consecutively.
 
 \begin{table}[h]
 \caption{Sample Table Title} \label{sample-table}
@@ -204,7 +173,9 @@ In order to train time lag based models, one must balance two incentives.
     \item Learn the time lag structure.
 \end{enumerate}
 
-These incentives have very different contexts. We have access to measurements of the output time series $y(t)$, but that is generally not the case for the time lag structure. Although it is possible that certain data sets may have patterns annotated with time lag information, this is not the norm.
+These incentives have very different contexts. We have access to measurements of the output time series $y(t)$, but that is generally 
+not the case for the time lag structure. Although it is possible that certain data sets may have patterns annotated with 
+time lag information, this is not the norm.
 
 We express the loss function as a sum of two terms (equation \ref{eq:loss}):
 \begin{equation}\label{eq:loss}
@@ -215,44 +186,63 @@ We express the loss function as a sum of two terms (equation \ref{eq:loss}):
 \end{aligned}
 \end{equation}
 
-NOTATION: could use ${\bf y} = y^{(1:M)}$ as a compact notation.
-
-QUESTION (Cyril): what is $i$, $m$ and $M$ (time and sample indexes)?
+The above loss function is computed over a mini-batch of size $M$, the indices $i$ denote the
+individual components of each prediction, while $m$ refers to data sample indices within the
+mini-batch in question.
 
 The first term, weighted with parameter $\lambda_1$ involves a weighted $L_2$ 
 error between the predictions $\hat{y}^{(m)}_{i}$ and the targets $y^{(m)}_{i}$. The second term, weighted with parameter $\lambda_2$
 has to penalize the predicted probabilities $\hat{p}^{(m)}$ in a meaningful manner. This can be done by considering some \emph{target probability} and
 calculating some distance/divergence from such a target.
 
-Remark: cherry-picking pitfall: we want to avoid the model to select in the loss function easier point to predict and discard the others. For instance there could be a tendency for any time $t$ favor the first instant $t+\ell$
-of the causal time window, by letting the causal probability to concentrate 
-on this time step. The ad hoc factor $(1+\hat p_i^{(m)})$ instead of $p_i^{(m)}$ in the first term contributes to avoid the cherry picking effect.
+\subsection{Weighted Error}
+
+We want to avoid the situation where the model cherry picks one of the outputs $j$ in the causal time window
+and concentrates most of the predictive distribution $\hat p^{(m)}$ around the time index $j$. 
+The factor $(1+\hat p_i^{(m)})$ instead of $\hat p_i^{(m)}$ in the first term contributes 
+to avoid this cherry picking effect. It forces the model to generate well performing
+predictions for the entire causal window and then move its predictive distribution
+to peak around the most predictable time index.
 
 \subsection{Target Probability}
 
-From the intuitions of Granger causality, we use the concept of causality as predictability, we can thus characterize the \emph{target probability}, $\widetilde{p}$ for a time window $[t+\ell, t+\ell+h)$ in the following manner: The lagged output $y(t+i)$ which has greater predictability given $x(t)$, is a more likely causal link. This idea is represented in equation \ref{eq:targetprob}, by means of the softmax function and an \emph{annealing temperature} $T$.
+From the intuitions of Granger causality, we use the concept of causality as predictability, we can thus characterize 
+the \emph{target probability}, $\widetilde{p}$ for a time window $[t+\ell, t+\ell+h)$ in the following manner: 
+The lagged output $y(t+i)$ which has greater predictability given $x(t)$, is a more likely causal link. This idea is represented
+in equation \ref{eq:targetprob}, by means of the softmax function and a smoothing parameter $\beta$.
 
 \begin{equation}\label{eq:targetprob}
-\widetilde{p}_{i}^{(m)} = \frac{exp \left( \frac{1}{T} (y_{i}^{(m)} - \hat{y}_{i}^{(m)})^{2} \right)}{\sum_{i}{exp \left( \frac{1}{T} (y_{i}^{(m)} - \hat{y}_{i}^{(m)})^{2} \right)}} 
+\widetilde{p}_{i}^{(m)} = \frac{exp \left(- \beta (y_{i}^{(m)} - \hat{y}_{i}^{(m)})^{2} \right)}{\sum_{i}{exp \left(- \beta (y_{i}^{(m)} - \hat{y}_{i}^{(m)})^{2} \right)}} 
 \end{equation}
 
-Remark: $\widetilde{p}$ is used here as a prior, and the $1/T$ parameter has to be adjusted, we should say words on how we adjust this one. 
+The hyper-parameter $\beta$ serves to determine how sharp the target probability distribution is around its peak. 
+The predictions $\hat{y}^{(m)}_{i}$, made by the model are penalized for their divergence from the \emph{target probability} via 
+the \emph{Hellinger distance} metric (equation \ref{eq:hellinger}).
 
-NOTATION: I would rather use $\beta=1/T$ as a parameter, does not need to refer to temperature actually.
+The choice of $\beta$ is generally empirical and depends on two criteria 
+\begin{enumerate} \item The size of the causal window, $\beta$ should increase with increasing $h$ 
+\item Sharpness/Confidence of the predictive distribution, as $\beta$ decreases, the \emph{target} probability distribution tends to be more peaked.  \end{enumerate}
 
-The temperature $T$ therefore serves to determine how sharp the target probability distribution is around its peak. The predictions $\hat{y}^{(m)}_{i}$, made by the model are penalized for their divergence from the \emph{target probability} via the \emph{Hellinger distance} metric (equation \ref{eq:hellinger}).
-
+Care must be taken to not set $\beta$ to a value that is very small, as this may cause numerical instabilities in the learning/optimization process. 
+For the experiments in this work outlined in section \ref{sec:exp}, we choose a value of $\beta = 0.75$ which worked adequately for our application.
 
 \begin{align}\label{eq:hellinger}
 & \mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)}) = \sum_{m = 1}^{M}{\frac{1}{M} \mathcal{H}(\hat{p}^{(m)}, \widetilde{p}^{(m)})} \\
 & \mathcal{H}(p, q) = \sqrt{\sum_{i}{(\sqrt{p_i} -  \sqrt{q_i})^2}}
 \end{align}
 
-\section{The (Neural Network) Model}
-I would explain here the architecture of you neural network based solution.
+\section{Model Architecture}
+
+The choice of model architecture is constrained by only one condition, i.e. the number of neurons in the output layer 
+must be $2 \times h$ where $h$ is the chosen size of the causal window. The composition and size of the layers preceding
+the output layer are dependent on the application, one may choose \emph{convolutional layers} for input data which consists
+of images and fully connected layers for vector data.
+
+For the experiments in section \ref{sec:exp}, we use fully connected neural architectures for prediction of outputs and time lags.
 
 
-\section{Experiments}
+
+\section{Experiments}\label{sec:exp}
 
 Just as the MNIST, CIFAR Santa Fe Laser and other data sets serve as a way to evaluate machine learning
 algorithms, it is necessary to propose benchmark problems for the \emph{causal dynamic time lag}.
@@ -261,9 +251,12 @@ This is particularly challenging given the nature of the CDT problem, although c
 relationships do exist in real world data sets (citations here), it is difficult to find data sets
 with time lag relationships explicitly annotated.
 
-This barrier can be surpassed in turn by careful construction of synthetic data sets which incorporate dynamic time lag relationships between causes and effects with various complexity.
+This barrier can be surpassed in turn by careful construction of synthetic data sets which incorporate dynamic time lag
+relationships between causes and effects with various complexity.
 
-Synthetic data sets allow us to evaluate the accuracy of both, the output and time lag predictions of CDT models. To this end, we the authors propose four benchmark tests, which are first driven by realistic criterion from the solar wind prediction problem, but also which we hope can become canonical examples in the area of CDT modelling.
+Synthetic data sets allow us to evaluate the accuracy of both, the output and time lag predictions of CDT models. 
+To this end, we the authors propose four benchmark tests, which are first driven by realistic criterion from the 
+solar wind prediction problem, but also which we hope can become canonical examples in the area of CDT modelling.
 
 \subsection{Data Generation}
 
@@ -280,7 +273,7 @@ In equation \ref{eq:outputs} we define the output $y(.)$ as the square norm
 of the appropriately time lagged input, where $\Delta(t)$ determines the causal
 time lag relationship.
 
-\subsection{Benchmark Problems}
+\subsection{Benchmark Problems}\label{sec:benchmark}
 
 Based on the above framework we construct four benchmark problems.
 
@@ -292,7 +285,7 @@ $\Delta(t) = k$
 \newline $\Delta(t) = d/(\alpha ||x(t)||^2)$
 
 \item \textbf{Problem III} Constant Acceleration $a$; Fixed Distance $d$: 
-\newline $\Delta(t) = (\sqrt{\alpha^2||x(t)||^4 - 2ad} - \alpha||x(t)||^2)/a$
+\newline $\Delta(t) = (\sqrt{\alpha^2||x(t)||^4 + 2ad} - \alpha||x(t)||^2)/a$
 
 \item \textbf{Problem IV} Softplus time lag: 
 \newline $\Delta(t) = exp\left(||x(t)||^2\right)/\left(1 + exp(||x(t)||^2)\right)$
@@ -301,55 +294,98 @@ $\Delta(t) = k$
 
 \subsection{Results}
 
-There are two types of charts
+The results of the experiments of \ref{sec:benchmark} are evaluated using the following charts.
 
-1. Scatter plots of velocity vs time lag, this helps us compare the v-timelag relationship, the red points represent model predictions and black dots represent ground truth data points in the test set.
+\begin{enumerate}
+    \item Output-Time Lag charts: To visualize the output-time lag relationship in the generated data sets and evaluate how 
+    well the model is able to infer this relationship.
+    \item Error Scatter charts: Scatter plots of prediction error in velocity vs prediction error in time lag. They help in visualizing the
+    shape of the error distribution.
+\end{enumerate}
 
-2. Scatter plots of prediction error in velocity vs prediction error in time lag.
+\subsubsection{Problem I}
 
+This is the simplest of the benchmark problems, the task is simply to learn a constant time lag from the training data, in figure \ref{fig:problem1} we can see
+the time-lag prediction error of the model for the training and test data sets. The model is able to recover this time-lag with little difficulty.
 
+\subsubsection{Problem II}
 
+Figure \ref{fig:problem2_scatter} shows a scatter plot between the output value and associated time lag, it compares the scatter distribution generated by
+the model and compares it with the distribution seen in the test data. In \ref{fig:problem2_curves} we present smoothed estimates of the points presented
+in \ref{fig:problem2_scatter}. We observe that the model is able to approximate the inverse relationship between the output and time lag from the training 
+data. It can also be observed that the model generally .
+
+\subsubsection{Problem III}
+
+\subsubsection{Problem IV}
 
 \begin{figure}[h]
+\vspace{.3in}
+
+\centerline{\label{fig:problem1}\includegraphics[width=0.5\textwidth]{figures/exp1_hist_errors_timelag.png}}
+\vspace{.3in}
+\caption{\textbf{Problem I}, Distribution of the time lag prediction error}
+\end{figure}
+
+
+
+\begin{figure}[h]\label{fig:problem2_scatter}
 \vspace{.3in}
 \centerline{\includegraphics[width=0.5\textwidth]{figures/exp2_scatter_v_tl.png}}
 \vspace{.3in}
-\caption{\textbf{Exp 2}: Output-Time Lag Scatter plot on test data; model predictions in red and actual data in black}
+\caption{\textbf{Problem II}, Output-Time Lag Scatter plot on test data; model predictions in red and actual data in black}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[h]\label{fig:problem2_error}
 \vspace{.3in}
 \centerline{\includegraphics[width=0.5\textwidth]{figures/exp2_scatter_errors_test.png}}
 \vspace{.3in}
-\caption{\textbf{Exp 2}: Error Scatter plot on test data}
+\caption{\textbf{Problem II}, Error Scatter plot on test data}
 \end{figure}
+
+\begin{figure}[h]\label{fig:problem2_curves}
+\vspace{.3in}
+\centerline{\includegraphics[width=0.5\textwidth]{figures/exp2_predictive_curves.png}}
+\vspace{.3in}
+\caption{\textbf{Problem II}, Output vs Time Lag Relationship}
+\end{figure}
+
+
 
 \begin{figure}[h]
 \vspace{.3in}
 \centerline{\includegraphics[width=0.5\textwidth]{figures/exp3_scatter_v_tl.png}}
 \vspace{.3in}
-\caption{\textbf{Exp 3}: Output-Time Lag Scatter plot; model predictions in red and actual data in black}
+\caption{\textbf{Problem III}, Output-Time Lag Scatter plot; model predictions in red and actual data in black}
 \end{figure}
 
 \begin{figure}[h]
 \vspace{.3in}
 \centerline{\includegraphics[width=0.5\textwidth]{figures/exp3_scatter_errors_test.png}}
 \vspace{.3in}
-\caption{\textbf{Exp 3}: Error Scatter plot on test data}
+\caption{\textbf{Problem III}, Error Scatter plot on test data}
 \end{figure}
+
+\begin{figure}[h]
+\vspace{.3in}
+\centerline{\includegraphics[width=0.5\textwidth]{figures/exp3_predictive_curves.png}}
+\vspace{.3in}
+\caption{\textbf{Problem III}, Output vs Time Lag Relationship}
+\end{figure}
+
 
 \begin{figure}[h]
 \vspace{.3in}
 \centerline{\includegraphics[width=0.5\textwidth]{figures/exp4_scatter_v_tl.png}}
 \vspace{.3in}
-\caption{\textbf{Exp 4}: Output-Time Lag Scatter plot; model predictions in red and actual data in black}
+\caption{\textbf{Problem IV}, Output-Time Lag Scatter plot; model predictions in red and actual data in black}
 \end{figure}
 
 \begin{figure}[h]
 \vspace{.3in}
 \centerline{\includegraphics[width=0.5\textwidth]{figures/exp4_scatter_errors_test.png}}
 \vspace{.3in}
-\caption{\textbf{Exp 3}: Error Scatter plot on test data}
+\caption{\textbf{Problem IV}, Error Scatter plot on test data}
 \end{figure}
 
 \subsubsection*{Acknowledgements}
