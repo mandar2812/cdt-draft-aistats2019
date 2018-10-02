@@ -60,6 +60,8 @@ deterministic way on the causing event. Our problem has therefore two components
 Both components of the problem are tricky ones. The first aspect is the subject of another work in progress. 
 In this paper we focus on the second aspect of the problem, namely assuming that we have already been able to extract in some ways (typically by convolutional network auto-encoders) a relevant low-dimensional signal from the solar images, and we tackle the regression problem of solar wind at L1 from this signal with delay. To our knowledge, the problem of regression with hidden non-constant time delay has not been addressed in the machine learning literature. This type  of problem has actually been encountered in the context of financial time series prediction in \cite{ZHOU2006195}.
 
+REMARK: the connection with dynamical time warping (with recent ref) has to 
+be discussed here.
 
 \section{Causality in Time Series}
 
@@ -119,10 +121,10 @@ Soma             &Cell body (contains cell nucleus) \\
 the causes $x(t)$ and the observed effects $y(t)$, the regression model must learn a mapping $f()$ which
 maps each input pattern $x(t_1)$ to an output $y(t_2)$, and a mapping $g()$ which maps the time delay between
 the input and output patterns $t_2 = t_1 + g(x(t_1))$. This is formally specified in equations below.
-\begin{align*}
-y(t + \Delta(t)) & = f[x(t)]\\
-\Delta(t) & = g[x(t)] 
-\end{align*}
+\begin{align}
+y(t + \Delta(t)) & = f[x(t)]\label{eq:pb1}\\
+\Delta(t) & = g[x(t)]\label{eq:pb2} 
+\end{align}
 with
 \[
 f: \mathcal{X}  \rightarrow \mathbb{R},\qquad\text{and}\qquad
@@ -139,6 +141,13 @@ The time warping function
 h(t) = t+\Delta(t),
 \]
 has the following properties ... 
+
+QUESTIONS: what happens if we don't assume a one to one mapping between $x(t)$
+and $y(t+\Delta(t))$, i.e. the time warping function being not invertible. Then it seems that the problem is not very well posed, we have to say what happens to $y(t_2)$ when $t_2$ has a pre-image by $h(t)$ with more than one element.
+From what I understand from the solar wind problem, the largest element of the pre-image is winning (shockwave effect). For the learning of the model this is clearly a problem, because we have to take sequences of $x(t)$ not a single one. How do deal with this problem in the present experimental setting?
+
+
+
 
 \section{Proposed Solution}
 
@@ -195,6 +204,10 @@ error between the predictions $\hat{y}^{(m)}_{i}$ and the targets $y^{(m)}_{i}$.
 has to penalize the predicted probabilities $\hat{p}^{(m)}$ in a meaningful manner. This can be done by considering some \emph{target probability} and
 calculating some distance/divergence from such a target.
 
+REMARK: possibly some confusing terminology here: traditionally I think the loss function is a map from $(H,X,Y)\to\mathbb{R}$ where $H$ is the set of predictors from $X$ to $Y$. Here what you call the loss is in fact the empirical loss (I checked in Laviolette slides about PAC Bayes)... And $Y$ here is in fact $(y^{(1:M)},\hat p^{(1:M)})$. But here  $\hat p$ is never observed  
+so OK never mind ... in the end it has to be  very easy and standard for the reader.  
+
+
 \subsection{Weighted Error}
 
 We want to avoid the situation where the model cherry picks one of the outputs $j$ in the causal time window
@@ -206,6 +219,7 @@ to peak around the most predictable time index.
 
 \subsection{Target Probability}
 
+Let us specify now the second term of the loss function.
 From the intuitions of Granger causality, we use the concept of causality as predictability, we can thus characterize 
 the \emph{target probability}, $\widetilde{p}$ for a time window $[t+\ell, t+\ell+h)$ in the following manner: 
 The lagged output $y(t+i)$ which has greater predictability given $x(t)$, is a more likely causal link. This idea is represented
@@ -219,12 +233,20 @@ The hyper-parameter $\beta$ serves to determine how sharp the target probability
 The predictions $\hat{y}^{(m)}_{i}$, made by the model are penalized for their divergence from the \emph{target probability} via 
 the \emph{Hellinger distance} metric (equation \ref{eq:hellinger}).
 
+REMARK: say maybe something here why Hellinger in particular, it seems to fall from the sky.
+
+
 The choice of $\beta$ is generally empirical and depends on two criteria 
 \begin{enumerate} \item The size of the causal window, $\beta$ should increase with increasing $h$ 
 \item Sharpness/Confidence of the predictive distribution, as $\beta$ decreases, the \emph{target} probability distribution tends to be more peaked.  \end{enumerate}
 
 Care must be taken to not set $\beta$ to a value that is very small, as this may cause numerical instabilities in the learning/optimization process. 
 For the experiments in this work outlined in section \ref{sec:exp}, we choose a value of $\beta = 0.75$ which worked adequately for our application.
+
+
+REMARK: say something like choose $\beta =0.75$ after a few trial and errors on the test set, which then worked for our application in the validation set...
+to avoid to be accused of learning the model on the validation test...
+
 
 \begin{align}\label{eq:hellinger}
 & \mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)}) = \sum_{m = 1}^{M}{\frac{1}{M} \mathcal{H}(\hat{p}^{(m)}, \widetilde{p}^{(m)})} \\
@@ -240,9 +262,10 @@ of images and fully connected layers for vector data.
 
 For the experiments in section \ref{sec:exp}, we use fully connected neural architectures for prediction of outputs and time lags.
 
-
+REMARK: here I would put a figure describing the architecture.
 
 \section{Experiments}\label{sec:exp}
+
 
 Just as the MNIST, CIFAR Santa Fe Laser and other data sets serve as a way to evaluate machine learning
 algorithms, it is necessary to propose benchmark problems for the \emph{causal dynamic time lag}.
@@ -302,6 +325,8 @@ The results of the experiments of \ref{sec:benchmark} are evaluated using the fo
     \item Error Scatter charts: Scatter plots of prediction error in velocity vs prediction error in time lag. They help in visualizing the
     shape of the error distribution.
 \end{enumerate}
+
+REMARK: I did not understand right away why you choose the output-time lag charts instead of the input-time lag chart ... now I see of course in your model the time lag can always be expressed as a simple function of the output... just need to be said to avoid the reader to be confused ...
 
 \subsubsection{Problem I}
 
