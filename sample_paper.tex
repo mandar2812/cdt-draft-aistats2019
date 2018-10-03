@@ -176,14 +176,11 @@ individual components of each prediction, while $m$ refers to data sample indice
 mini-batch in question.
 
 The first term, weighted with parameter $\lambda_1$ involves a weighted $L_2$ 
-error between the predictions $\hat{y}^{(m)}_{i}$ and the targets $y^{(m)}_{i}$. The second term, weighted with parameter $\lambda_2$
-has to penalize the predicted probabilities $\hat{p}^{(m)}$ in a meaningful manner. This can be done by considering some \emph{target probability} and
-calculating some distance/divergence from such a target.
+error between the predictions $\hat{y}^{(m)}_{i}$ and the targets $y^{(m)}_{i}$. The second term, weighted with parameter $\lambda_2$ has to penalize the predicted probabilities $\hat{p}^{(m)}$ in a meaningful manner. This can be done by considering some \emph{target probability} and calculating some distance/divergence from such a target.
 
 \subsection{Weighted Error}
 
-We want to avoid the situation where the model cherry picks one of the outputs $j$ in the causal time window
-and concentrates most of the predictive distribution $\hat p^{(m)}$ around the time index $j$. 
+We want to avoid the situation where the model cherry picks one of the outputs $j$ in the causal time window and concentrates most of the predictive distribution $\hat p^{(m)}$ around the time index $j$. 
 The factor $(1+\hat p_i^{(m)})$ instead of $\hat p_i^{(m)}$ in the first term contributes 
 to avoid this cherry picking effect. It forces the model to generate well performing
 predictions for the entire causal window and then move its predictive distribution
@@ -192,47 +189,42 @@ to peak around the most predictable time index.
 \subsection{Target Probability}
 
 Let us specify now the second term of the loss function.
-From the intuitions of Granger causality, we use the concept of causality as predictability, we can thus characterize 
-the \emph{target probability}, $\widetilde{p}$ for a time window $[t+\ell, t+\ell+h)$ in the following manner: 
-The lagged output $y(t+i)$ which has greater predictability given $x(t)$, is a more likely causal link. This idea is represented
-in equation \ref{eq:targetprob}, by means of the softmax function and a smoothing parameter $\beta$.
+From the intuitions of Granger causality, we use the concept of causality as predictability, we can thus characterize the \emph{target probability}, $\widetilde{p}$ for a time window $[t+\ell, t+\ell+h)$ in the following manner: The lagged output $y(t+i)$ which has greater predictability given $x(t)$, is a more likely causal link. This idea is represented in equation \ref{eq:targetprob}, by means of the softmax function and a smoothing parameter $\beta$.
 
 \begin{equation}\label{eq:targetprob}
 \widetilde{p}_{i}^{(m)} = \frac{exp \left(- \beta (y_{i}^{(m)} - \hat{y}_{i}^{(m)})^{2} \right)}{\sum_{i}{exp \left(- \beta (y_{i}^{(m)} - \hat{y}_{i}^{(m)})^{2} \right)}} 
 \end{equation}
 
-The hyper-parameter $\beta$ serves to determine how sharp the target probability distribution is around its peak. 
-The predictions $\hat{y}^{(m)}_{i}$, made by the model are penalized for their divergence from the \emph{target probability} via 
-the \emph{Hellinger distance} metric (equation \ref{eq:hellinger}).
+The hyper-parameter $\beta$ serves to determine how sharp the target probability distribution is around its peak. The predictions $\hat{y}^{(m)}_{i}$, made by the model are penalized for their divergence from the \emph{target probability} via the \emph{Hellinger distance} metric (equation \ref{eq:hellinger}).
 
-REMARK: say maybe something here why Hellinger in particular, it seems to fall from the sky.
 
+There are a number of candidate choices for defining the model's divergence from the \emph{target probability}, \emph{Kullback-Leibler divergence}, \emph{Jensen-Shannon divergence}, \emph{Total Variational distance}, \emph{Hellinger distance} and \emph{Bhattacharya Distance} to name a few. We found that for the applications considered in this work, \emph{Hellinger distance} worked best. In principle it is possible to use any one of the mentioned divergence/distance measures as a penalty, since the work outlined in this paper is general in nature.
+
+\begin{align}\label{eq:prior}
+& \mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)}) = \sum_{m = 1}^{M}{\frac{1}{M} \mathcal{H}(\hat{p}^{(m)}, \widetilde{p}^{(m)})} \\
+& \mathcal{H}(p, q) = \sqrt{\sum_{i}{(\sqrt{p_i} -  \sqrt{q_i})^2}} \label{eq:hellinger}
+\end{align}
+
+
+\subsection{Hyper-parameters}
+
+The quantities $\lambda_1, \lambda_2, \beta$ are hyper-parameters which must be adjusted to the application at hand.
+
+The weights $\lambda_1, \lambda_2$ control the importance of each term in the loss (equation \ref{eq:loss}).
 
 The choice of $\beta$ is generally empirical and depends on two criteria 
 \begin{enumerate} \item The size of the causal window, $\beta$ should increase with increasing $h$ 
 \item Sharpness/Confidence of the predictive distribution, as $\beta$ decreases, the \emph{target} probability distribution tends to be more peaked.  \end{enumerate}
 
 Care must be taken to not set $\beta$ to a value that is very small, as this may cause numerical instabilities in the learning/optimization process. 
-For the experiments in this work outlined in section \ref{sec:exp}, we choose a value of $\beta = 0.75$ which worked adequately for our application.
 
-
-REMARK: say something like choose $\beta =0.75$ after a few trial and errors on the test set, which then worked for our application in the validation set...
-to avoid to be accused of learning the model on the validation test...
-
-
-\begin{align}\label{eq:hellinger}
-& \mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)}) = \sum_{m = 1}^{M}{\frac{1}{M} \mathcal{H}(\hat{p}^{(m)}, \widetilde{p}^{(m)})} \\
-& \mathcal{H}(p, q) = \sqrt{\sum_{i}{(\sqrt{p_i} -  \sqrt{q_i})^2}}
-\end{align}
+After some trial and error adjusting the values of the hyper-parameters, we settled on the values $\beta = \frac{4}{3}, \lambda_1 = 1, \lambda_2 = 0.85$ which worked adequately for the experiments in section \ref{sec:exp}.
 
 \section{Model Architecture}
 
-The choice of model architecture is constrained by only one condition, i.e. the number of neurons in the output layer 
-must be $2 \times h$ where $h$ is the chosen size of the causal window. The composition and size of the layers preceding
-the output layer are dependent on the application, one may choose \emph{convolutional layers} for input data which consists
-of images and fully connected layers for vector data.
+The choice of model architecture is constrained by only one condition, i.e. the number of neurons in the output layer must be $2 \times h$ where $h$ is the chosen size of the causal window. The composition and size of the layers preceding the output layer are dependent on the application, one may choose \emph{convolutional layers} for input data which consists of images and fully connected layers for vector data.
 
-For the experiments in section \ref{sec:exp}, we use fully connected neural architectures for prediction of outputs and time lags.
+In section \ref{sec:exp}, we use fully connected neural architectures for prediction of outputs and time lags.
 
 REMARK: here I would put a figure describing the architecture.
 
@@ -240,24 +232,19 @@ REMARK: here I would put a figure describing the architecture.
 
 
 Just as the MNIST, CIFAR Santa Fe Laser and other data sets serve as a way to evaluate machine learning
-algorithms, it is necessary to propose benchmark problems for the \emph{causal dynamic time lag}.
+algorithms, it is necessary to propose benchmark problems for \emph{causal dynamic time lag}.
 
 This is particularly challenging given the nature of the CDT problem, although causal time lag
 relationships do exist in real world data sets (citations here), it is difficult to find data sets
 with time lag relationships explicitly annotated.
 
-This barrier can be surpassed in turn by careful construction of synthetic data sets which incorporate dynamic time lag
-relationships between causes and effects with various complexity.
+This barrier can be surpassed in turn by careful construction of synthetic data sets which incorporate dynamic time lag relationships between causes and effects with various complexity.
 
-Synthetic data sets allow us to evaluate the accuracy of both, the output and time lag predictions of CDT models. 
-To this end, we the authors propose four benchmark tests, which are first driven by realistic criterion from the 
-solar wind prediction problem, but also which we hope can become canonical examples in the area of CDT modelling.
+Synthetic data sets allow us to evaluate the accuracy of both, the output and time lag predictions of CDT models. To this end, we propose four benchmark tests, which are motivated by their connection to the solar wind prediction problem, but which we hope can become canonical examples in the area of CDT modelling.
 
 \subsection{Data Generation}
 
-We start by generating the time series $x(t)$ which represent the driving/causal
-forces in our system. This can be achieved with good flexibility using 
-\emph{Stochastic Langevin Dynamics} as shown in equation \ref{eq:data}. 
+We start by generating the time series $x(t)$ which represent the driving/causal forces in our system. This can be achieved with good flexibility using \emph{Stochastic Langevin Dynamics} as shown in equation \ref{eq:data}. 
 
 \begin{align}
  x(t+1) &= (1 - \beta) x(t) + \mathcal{N}(0, \sigma^2) \label{eq:data}\\
@@ -311,7 +298,7 @@ We can see that the model is able to approximate the inverse relationship betwee
 
 \subsubsection{Problem III}
 
-
+Problem III involves a more complicated output time lag relationship than problem II due to the effect of acceleration. From figures \ref{fig:problem3_scatter} and \ref{fig:problem3_error}, it can be observed that the model can still learn the time lag and output mappings although in this case the time lag error distribution has a longer tail in figure \ref{fig:problem3_error} as compared to \ref{fig:problem2_error}.
 
 \subsubsection{Problem IV}
 
@@ -347,6 +334,7 @@ We can see that the model is able to approximate the inverse relationship betwee
 \centerline{\includegraphics[width=0.5\textwidth]{figures/exp3_scatter_v_tl.png}}
 \vspace{.3in}
 \caption{\textbf{Problem III}, Output-Time Lag Scatter plot; model predictions in red and actual data in black}
+\label{fig:problem3_scatter}
 \end{figure}
 
 \begin{figure}[h]
@@ -354,6 +342,7 @@ We can see that the model is able to approximate the inverse relationship betwee
 \centerline{\includegraphics[width=0.5\textwidth]{figures/exp3_scatter_errors_test.png}}
 \vspace{.3in}
 \caption{\textbf{Problem III}, Error in prediction of output vs error in time lag prediction}
+\label{fig:problem3_error}
 \end{figure}
 
 \begin{figure}[h]
@@ -361,6 +350,7 @@ We can see that the model is able to approximate the inverse relationship betwee
 \centerline{\includegraphics[width=0.5\textwidth]{figures/exp3_predictive_curves.png}}
 \vspace{.3in}
 \caption{\textbf{Problem III}, Output vs Time Lag Relationship}
+\label{fig:problem3_curves}
 \end{figure}
 
 
@@ -369,6 +359,7 @@ We can see that the model is able to approximate the inverse relationship betwee
 \centerline{\includegraphics[width=0.5\textwidth]{figures/exp4_scatter_v_tl.png}}
 \vspace{.3in}
 \caption{\textbf{Problem IV}, Output-Time Lag Scatter plot; model predictions in red and actual data in black}
+\label{fig:problem4_scatter}
 \end{figure}
 
 \begin{figure}[h]
@@ -376,6 +367,7 @@ We can see that the model is able to approximate the inverse relationship betwee
 \centerline{\includegraphics[width=0.5\textwidth]{figures/exp4_scatter_errors_test.png}}
 \vspace{.3in}
 \caption{\textbf{Problem IV}, Error in prediction of output vs error in time lag prediction}
+\label{fig:problem4_error}
 \end{figure}
 
 \begin{figure}[h]
@@ -383,6 +375,7 @@ We can see that the model is able to approximate the inverse relationship betwee
 \centerline{\includegraphics[width=0.5\textwidth]{figures/exp4_predictive_curves.png}}
 \vspace{.3in}
 \caption{\textbf{Problem IV}, Output vs Time Lag Relationship}
+\label{fig:problem4_curves}
 \end{figure}
 
 
