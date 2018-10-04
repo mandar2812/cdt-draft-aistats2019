@@ -368,10 +368,8 @@ Maximum         & $687.4$ \\
 
 \subsubsection{Problem IV}
 
-
-
-
-
+Figures \ref{fig:problem4_scatter}, \ref{fig:problem4_error}, \ref{fig:problem4_curves} summarize the results of the experiment. This case is different as compared to the previous problems as there is now
+a monotonic relationship between the output and time lag. A key difference in the model performance in this problem can be observed in error scatter chart \ref{fig:problem4_error}, we can see that the error distribution in the time lag direction is no much more symmetric as compared to the previous problems. This change may be attributed to the monotonicity of the output time lag relationship in the data.
 
 
 \begin{figure}[h]
@@ -398,11 +396,16 @@ Maximum         & $687.4$ \\
 \label{fig:problem4_curves}
 \end{figure}
 
+\section{Conclusions}
+
+We present in this work a formulation and a novel solution methodology for the problem of performing inference and forecasting in the context of lagged causal relationships between time series. We call this problem \emph{Causal Dynamic Time Lag} (CDT) to note the non-stationary nature of the causal link between time series $x(t)$ and $y(t)$. We outline a neural network based solution to this problem and benchmark its performance on a set of carefully constructed problems.
+
+This work is an area of active research and progress. Going ahead we plan to apply this methodology to the problem of forecasting of geomagnetic phenomena which are driven by features observed on the surface of the Sun, i.e. sunspots and active regions.
+
 
 \subsubsection*{Acknowledgements}
 
-Use the unnumbered third level heading for the acknowledgements.  All
-acknowledgements go at the end of the paper.
+The authors would like to acknowledge INRIA associate team grant EA-544 for enabling scientific collaboration.
 
 \bibliography{references}
 
