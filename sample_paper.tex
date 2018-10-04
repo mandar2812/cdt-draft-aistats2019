@@ -44,9 +44,9 @@
 
 \aistatstitle{Causal Dynamic Time Lag: Predicting What \& When}
 
-\aistatsauthor{M. Chandorkar, C. Furtlehner, E. Camporeale and  M. Sebag }
+\aistatsauthor{Anonymous}
 
-\aistatsaddress{CWI Amsterdam, INRIA Paris Saclay} ]
+\aistatsaddress{Anonymous} ]
 
 \begin{abstract}
   We formalize the joint regression task of predicting the magnitude of signals as well as the time delay with respect to their driving phenomena. We call the problem \emph{causal dynamic time lag} (CDT), to take note of the non-stationary time delay between the occurrence of causes/drivers and the observation of effects in physical and man-made systems. We propose a solution to the CDT problem and a methodology to benchmark and evaluate causal time lag estimation algorithms.
@@ -54,38 +54,27 @@
 
 \section{Introduction}
 
-Here we motivate the problem by the space weather application. We explain the what and when on the solar wind example... We want to predict solar wind close to the earth from causes seen on solar images like specific sun spots or particular structures\ldots
-Typically once an eruption occurs on the sun it will take about 10hours to two days to travel to the satellite which measures the solar wind at the Lagrange point L1. The exact travel time of the phenomena depend itself in a non fully 
-deterministic way on the causing event. Our problem has therefore two components, first identify in solar images the indications of something causing some possible perturbation on the solar wind at L1 (the \emph{what}). The second component is when will this effect be observable at L1 (the \emph{when}). 
+Temporal phenomena surround us, be it natural or man-made processes, one can find time varying quantities everywhere. Of similar ubiquity is causal relationship between processes. Although rigorous understanding and identification of causal links between arbitrary quantities is an elusive question, for certain situations it is well known that some causal relationship must exist. 
 
-Both components of the problem are tricky ones. The first aspect is the subject of another work in progress. 
-In this paper we focus on the second aspect of the problem, namely assuming that we have already been able to extract in some ways (typically by convolutional network auto-encoders) a relevant low-dimensional signal from the solar images, and we tackle the regression problem of solar wind at L1 from this signal with delay. To our knowledge, the problem of regression with hidden non-constant time delay has not been addressed in the machine learning literature. This type  of problem has actually been encountered in the context of financial time series prediction in \cite{ZHOU2006195} for instance. This  
-is a form a dynamical time warping (DTW) which appeared originally in the context of speech recognition~\cite{SakoeShiba1978}. This algorithm is now widely used in time series analysis, but it always come with a predefined cost
-for the alignment between the two time series. In our situation as we shall see
-this cost and the alignment are entangled.
+Some of the seminal work relating to causality in time series data is found in \cite{Granger}, which introduced the concept of \emph{Granger Causality}. \emph{Granger causality} focused on the problem of predictive causality instead of the philosophical or \emph{true causality}. Although originally formulated for linear causal relationships with no latent variables, it has since been extended for various situations (see \cite{doi:10.1002/9781119945710.ch22} for a review).
 
+In temporal phenomena, it is also the case that causal effects of events are not immediately observed, but after a certain time interval which can be dynamic. One prominent example of such behavior is the Sun-Earth system and its associated problem of space weather forecasting.
 
-REMARK: the connection with dynamical time warping (with recent ref) has to 
-be discussed here.
+The Sun, a perennial source of charged energetic particles ejects them into the surrounding space. This particle cloud or \emph{solar wind} reaches the Earth's vicinity and interacts with its magnetic field in complex ways, giving rise to geomagnetic phenomena. High speed solar wind can potentially cause damage to under sea pipelines, satellites, and other telecommunication infrastructure. A key prediction task is to estimate the speed of the \emph{solar wind} in the vicinity of the Earth from solar image data.   
+ 
+To our knowledge, the problem of regression with hidden non-constant time delay, as formulated later in section \ref{sec:formulation} has not been addressed in the machine learning literature. 
 
-\section{Causality in Time Series}
+A similar type of problem has actually been encountered in the context of financial time series prediction in \cite{ZHOU2006195}. This is a form a dynamical time warping (DTW) which appeared originally in the context of speech recognition~\cite{SakoeShiba1978}. \cite{SignalDiffusion} build on the DTW paradigm and take a bayesian approach to the temporal alignment problem between time series, they considered only linear relationships between the input and output time series.
 
-
-\subsection{Granger Causality}
-
-
-\subsubsection{Previous Work}
-
-Non-parametric determination of time lag \cite{ZHOU2006195}.
+The DTW algorithm and its variants are now widely used in time series analysis, but they always assume a predefined cost matrix for the temporal alignment between two time series and they assume the causes $x(t)$ and effects $y(t)$ are of same dimensionality and structure. 
 
 
 
-\section{Problem Formulation}
 
-\emph{Causal Dynamic Time Lag} is essentially a regression problem with two tasks. Given two time series, 
-the causes $x(t)$ and the observed effects $y(t)$, the regression model must learn a mapping $f()$ which
-maps each input pattern $x(t_1)$ to an output $y(t_2)$, and a mapping $g()$ which maps the time delay between
-the input and output patterns $t_2 = t_1 + g(x(t_1))$. This is formally specified in equations below.
+\section{Problem Formulation}\label{sec:formulation}
+
+\emph{Causal Dynamic Time Lag} (CDT) is essentially a regression problem with two tasks. Given two time series, the causes $x(t)$ and the observed effects $y(t)$, the regression model must learn a mapping $f()$ which maps each input pattern $x(t_1)$ to an output $y(t_2)$, and a mapping $g(.)$ which maps the time delay between the input and output patterns $t_2 = t_1 + g(x(t_1))$. This is formally specified in equations below.
+
 \begin{align}
 y(t + \Delta(t)) & = f[x(t)]\label{eq:pb1}\\
 \Delta(t) & = g[x(t)]\label{eq:pb2} 
@@ -95,29 +84,29 @@ with
 f: \mathcal{X}  \rightarrow \mathbb{R},\qquad\text{and}\qquad
 g: \mathcal{X}  \rightarrow \mathbb{R}^{+},
 \]
-$t \in \mathbb{R}$ represents the continuous temporal domain. The input signal $x(t)\in \mathcal{X}$ is possibly high dimensional and contains the hidden cause to the effect $y(t)\in\mathbb{R}$ which is considered as a scalar in this paper. $\Delta(t)\in \mathbb{R}^+$ represents the time delay between cause and effect. Here we do not assume necessarily that the composed function 
+$t \in \mathbb{R}^{+}$ represents the continuous temporal domain. The input signal $x(t)\in \mathcal{X}$ is possibly high dimensional and contains the hidden cause to the effect $y(t)\in\mathbb{R}$ which is considered as a scalar in this paper. $\Delta(t)\in \mathbb{R}^+$ represents the time delay between cause and effect.
 
-Remark 1:\\
-In practical applications as the space weather example, the time $\Delta(t)$ is usually  not observed  and can be viewed as a latent variable. We will come back later on this.\\[0.2cm]  
-Remark 2:\\
-The time warping function 
-\[
-h(t) = t+\Delta(t),
-\]
-has the following properties ... 
+It is important to note some caveats about this causal time lag which make the CDT different from classical time series regression problems.
 
-QUESTIONS: what happens if we don't assume a one to one mapping between $x(t)$
-and $y(t+\Delta(t))$, i.e. the time warping function being not invertible. Then it seems that the problem is not very well posed, we have to say what happens to $y(t_2)$ when $t_2$ has a pre-image by $h(t)$ with more than one element.
-From what I understand from the solar wind problem, the largest element of the pre-image is winning (shockwave effect). For the learning of the model this is clearly a problem, because we have to take sequences of $x(t)$ not a single one. How do deal with this problem in the present experimental setting?
+In practical applications such as the motivating space weather example, $\Delta(t)$ is not recorded explicitly in the data set. This makes model training and evaluation challenging.
+
+One may make certain assumptions on the time warping function $\phi(t) = t + g(x(t))$, in the general formulation of the problem presented here: 
+
+\begin{enumerate}
+    \item $\phi(.)$ is assumed to be continuous and bijective.
+    \item \cite{ZHOU2006195} enforce further assumptions such as $\phi(t_1) \leq \phi(t_2), \forall t_1 \leq t_2$, which are incorporated via constraints. This approach respects the properties associated with the warping function $\phi(.)$ but increase the computational complexity of the resulting optimization problem.
+\end{enumerate}
+
+The second assumption can be restrictive for applications in space physics, where fast moving solar wind can reach the Earth before slow moving solar wind which departed before it. 
+
+Our proposed approach works with discrete analogue of the time series $x(t), y(t)$ and does not explicitly enforce assumptions 1 or 2, but instead tries to learn an estimator which for every input $x(t)$, returns an output and time lag estimation. This enables us to benefit from batch wise stochastic gradient learning methods and make our method scalable to larger data sets.
 
 
-
-
-\section{Proposed Solution}
+\section{Proposed Solution}\label{sec:model}
 
 In practical time-series applications, one works with sub-sampled or discretized versions of the time 
 series $x(t)$ and $y(t)$. The time delay function $g(.)$ can now be recast as a function which for every
-input pattern $x(t_i)$, returns a time delay $\delta$ corresponding the time step $t_i + \delta$ when,
+input pattern $x(t_i)$, returns a time delay $\delta$ corresponding to the time step $t_i + \delta$ when,
 the effect $y(t_i + \delta)$ is observed.
 
 For practical purposes one must define for every time step $t$, a \emph{causal time window} $[t+\ell, t+\ell+h]$, within which the model searches for probable temporal causal links.
@@ -125,7 +114,7 @@ For practical purposes one must define for every time step $t$, a \emph{causal t
 Our proposed model then produces for a given input $x(t)$ at time $t$ the following predictions:
 
 \begin{enumerate}
-\item Targets $y(t+\ell), \cdots, y(t+\ell+h-1)$
+\item Targets $\hat{y}(t+\ell), \cdots, \hat{y}(t+\ell+h-1)$
 \item Time Lag Probabilities $\hat{p}(t+\ell), \cdots, \hat{p}(t+\ell+h-1)$
 \end{enumerate}
 
@@ -146,9 +135,7 @@ In order to train time lag based models, one must balance two incentives.
     \item Learn the time lag structure.
 \end{enumerate}
 
-These incentives have very different contexts. We have access to measurements of the output time series $y(t)$, but that is generally 
-not the case for the time lag structure. Although it is possible that certain data sets may have patterns annotated with 
-time lag information, this is not the norm.
+These incentives have very different contexts. We have access to measurements of the output time series $y(t)$, but that is generally not the case for the time lag structure. Although it is possible that certain data sets may have patterns annotated with time lag information, this is not the norm.
 
 We express the loss function as a sum of two terms (equation \ref{eq:loss}):
 \begin{equation}\label{eq:loss}
@@ -201,10 +188,10 @@ The quantities $\lambda_1, \lambda_2, \beta$ are hyper-parameters which must be 
 The weights $\lambda_1, \lambda_2$ control the importance of each term in the loss (equation \ref{eq:loss}).
 
 The choice of $\beta$ is generally empirical and depends on two criteria 
-\begin{enumerate} \item The size of the causal window, $\beta$ should increase with increasing $h$ 
-\item Sharpness/Confidence of the predictive distribution, as $\beta$ decreases, the \emph{target} probability distribution tends to be more peaked.  \end{enumerate}
+\begin{enumerate} \item The size of the causal window, $\beta$ should decrease with increasing causal window $h$. 
+\item Sharpness/Confidence of the predictive distribution, as $\beta$ increases, the \emph{target} probability distribution tends to be more peaked.  \end{enumerate}
 
-Care must be taken to not set $\beta$ to a value that is very small, as this may cause numerical instabilities in the learning/optimization process. 
+Care must be taken to not set $\beta$ to a value that is very large ($\gg 1$), as this may cause numerical instabilities in the learning/optimization process. 
 
 After some trial and error adjusting the values of the hyper-parameters, we settled on the values $\beta = \frac{4}{3}, \lambda_1 = 1, \lambda_2 = 0.85$ which worked adequately for the experiments in section \ref{sec:exp}.
 
@@ -212,9 +199,17 @@ After some trial and error adjusting the values of the hyper-parameters, we sett
 
 The choice of model architecture is constrained by only one condition, i.e. the number of neurons in the output layer must be $2 \times h$ where $h$ is the chosen size of the causal window. The composition and size of the layers preceding the output layer are dependent on the application, one may choose \emph{convolutional layers} for input data which consists of images and fully connected layers for vector data.
 
+\begin{figure}[h]
+\vspace{.3in}
+\centerline{\includegraphics[width=0.5\textwidth]{figures/network.jpg}}
+\vspace{.3in}
+\caption{Network architecture}
+\label{fig:network}
+\end{figure}
+
+
 In section \ref{sec:exp}, we use fully connected neural architectures for prediction of outputs and time lags.
 
-REMARK: here I would put a figure describing the architecture.
 
 \section{Experiments}\label{sec:exp}
 
@@ -232,16 +227,21 @@ Synthetic data sets allow us to evaluate the accuracy of both, the output and ti
 
 \subsection{Data Generation}
 
-We start by generating the time series $x(t)$ which represent the driving/causal forces in our system. This can be achieved with good flexibility using \emph{Stochastic Langevin Dynamics} as shown in equation \ref{eq:data}. 
+We start by generating the time series $x(t) \in \mathbb{R}^8$, of dimension $8$, which represent the driving/causal forces in our system. This can be achieved with good flexibility using \emph{Stochastic Langevin Dynamics} as shown in equation \ref{eq:data}. 
 
 \begin{align}
  x(t+1) &= (1 - \beta) x(t) + \mathcal{N}(0, \sigma^2) \label{eq:data}\\
  y(t+\Delta(t)) &= \alpha ||x(t)||^2 \label{eq:outputs}
 \end{align}
 
-In equation \ref{eq:outputs} we define the output $y(.)$ as the square norm
-of the appropriately time lagged input, where $\Delta(t)$ determines the causal
-time lag relationship.
+In equation \ref{eq:outputs} we define the output $y(.)$ as the square norm of the appropriately time lagged input, where $\Delta(t)$ determines the causal time lag relationship.
+
+\subsection{Generating Predictions}
+
+As described in section \ref{sec:model} above, for each input pattern $x(t)$, the model generates two sets of predictions, i.e. ${\hat{y}_i}$, output estimates and probabilities $\hat{p}_i$ for the time window $i \in [t+\ell, t+\ell+h-1]$ of width $h$. 
+
+In order to evaluate the model predictions for the benchmarks, we choose the prediction $\hat{y}_j$ which has the highest probability of a causal link $j = {argmax}_{i} \ \hat{p}_i, \forall i \in [t+\ell, t+\ell+h-1]$. The predictions $(\hat{y}_j, j)$ can now be compared to their corresponding ground truth values $(y(t + \Delta(t)), \Delta(t))$.
+
 
 \subsection{Benchmark Problems}\label{sec:benchmark}
 
@@ -300,6 +300,13 @@ This is the simplest of the benchmark problems, the task is simply to learn a co
 \label{fig:problem2_curves}
 \end{figure}
 
+\begin{figure}[h]
+\vspace{.3in}
+\centerline{\includegraphics[width=0.5\textwidth]{figures/exp2_timeseries_pred.png}}
+\vspace{.3in}
+\caption{\textbf{Problem II}, A portion of the test time series reconstructed using the model}
+\label{fig:problem2_timeseries}
+\end{figure}
 
 
 \subsubsection{Problem II}
@@ -404,8 +411,6 @@ This work is an area of active research and progress. Going ahead we plan to app
 
 
 \subsubsection*{Acknowledgements}
-
-The authors would like to acknowledge INRIA associate team grant EA-544 for enabling scientific collaboration.
 
 \bibliography{references}
 
