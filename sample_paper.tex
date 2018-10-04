@@ -44,7 +44,7 @@
 
 \aistatstitle{Causal Dynamic Time Lag: Predicting What \& When}
 
-\aistatsauthor{ M. Chandorkar, C. Furtlehner, E. Camporeale and  M. Sebag }
+\aistatsauthor{M. Chandorkar, C. Furtlehner, E. Camporeale and  M. Sebag }
 
 \aistatsaddress{CWI Amsterdam, INRIA Paris Saclay} ]
 
@@ -59,7 +59,11 @@ Typically once an eruption occurs on the sun it will take about 10hours to two d
 deterministic way on the causing event. Our problem has therefore two components, first identify in solar images the indications of something causing some possible perturbation on the solar wind at L1 (the \emph{what}). The second component is when will this effect be observable at L1 (the \emph{when}). 
 
 Both components of the problem are tricky ones. The first aspect is the subject of another work in progress. 
-In this paper we focus on the second aspect of the problem, namely assuming that we have already been able to extract in some ways (typically by convolutional network auto-encoders) a relevant low-dimensional signal from the solar images, and we tackle the regression problem of solar wind at L1 from this signal with delay. To our knowledge, the problem of regression with hidden non-constant time delay has not been addressed in the machine learning literature. This type  of problem has actually been encountered in the context of financial time series prediction in \cite{ZHOU2006195}.
+In this paper we focus on the second aspect of the problem, namely assuming that we have already been able to extract in some ways (typically by convolutional network auto-encoders) a relevant low-dimensional signal from the solar images, and we tackle the regression problem of solar wind at L1 from this signal with delay. To our knowledge, the problem of regression with hidden non-constant time delay has not been addressed in the machine learning literature. This type  of problem has actually been encountered in the context of financial time series prediction in \cite{ZHOU2006195} for instance. This  
+is a form a dynamical time warping (DTW) which appeared originally in the context of speech recognition~\cite{SakoeShiba1978}. This algorithm is now widely used in time series analysis, but it always come with a predefined cost
+for the alignment between the two time series. In our situation as we shall see
+this cost and the alignment are entangled.
+
 
 REMARK: the connection with dynamical time warping (with recent ref) has to 
 be discussed here.
@@ -75,21 +79,6 @@ be discussed here.
 Non-parametric determination of time lag \cite{ZHOU2006195}.
 
 
-\subsubsection{Tables}
-
-
-\begin{table}[h]
-\caption{Sample Table Title} \label{sample-table}
-\begin{center}
-\begin{tabular}{ll}
-\textbf{PART}  &\textbf{DESCRIPTION} \\
-\hline \\
-Dendrite         &Input terminal \\
-Axon             &Output terminal \\
-Soma             &Cell body (contains cell nucleus) \\
-\end{tabular}
-\end{center}
-\end{table}
 
 \section{Problem Formulation}
 
@@ -106,8 +95,7 @@ with
 f: \mathcal{X}  \rightarrow \mathbb{R},\qquad\text{and}\qquad
 g: \mathcal{X}  \rightarrow \mathbb{R}^{+},
 \]
-$t \in \mathbb{R}$ represents the continuous temporal domain. The input signal $x(t)\in \mathcal{X}$ is possibly high dimensional and contains the hidden cause to the effect $y(t)\in\mathbb{R}$ which is considered as a scalar in this paper. 
-$\Delta(t)\in \mathbb{R}^+$ represents the time delay between cause and effect. Here we do not assume necessarily that the composed function 
+$t \in \mathbb{R}$ represents the continuous temporal domain. The input signal $x(t)\in \mathcal{X}$ is possibly high dimensional and contains the hidden cause to the effect $y(t)\in\mathbb{R}$ which is considered as a scalar in this paper. $\Delta(t)\in \mathbb{R}^+$ represents the time delay between cause and effect. Here we do not assume necessarily that the composed function 
 
 Remark 1:\\
 In practical applications as the space weather example, the time $\Delta(t)$ is usually  not observed  and can be viewed as a latent variable. We will come back later on this.\\[0.2cm]  
@@ -198,7 +186,7 @@ From the intuitions of Granger causality, we use the concept of causality as pre
 The hyper-parameter $\beta$ serves to determine how sharp the target probability distribution is around its peak. The predictions $\hat{y}^{(m)}_{i}$, made by the model are penalized for their divergence from the \emph{target probability} via the \emph{Hellinger distance} metric (equation \ref{eq:hellinger}).
 
 
-There are a number of candidate choices for defining the model's divergence from the \emph{target probability}, \emph{Kullback-Leibler divergence}, \emph{Jensen-Shannon divergence}, \emph{Total Variational distance}, \emph{Hellinger distance} and \emph{Bhattacharya Distance} to name a few. We found that for the applications considered in this work, \emph{Hellinger distance} worked best. In principle it is possible to use any one of the mentioned divergence/distance measures as a penalty, since the work outlined in this paper is general in nature.
+There are a number of candidate choices for defining the model's divergence from the \emph{target probability}, i.e.  \emph{Kullback-Leibler divergence}, \emph{Jensen-Shannon divergence}, \emph{Total Variational distance}, \emph{Hellinger distance} and \emph{Bhattacharya distance} to name a few. We found that for the applications considered in this work, \emph{Hellinger distance} worked best. In principle it is possible to use any one of the mentioned divergence/distance measures as a penalty, since the work outlined in this paper is general in nature.
 
 \begin{align}\label{eq:prior}
 & \mathcal{J}(y^{(1:M)}, \hat{y}^{(1:M)}, \hat{p}^{(1:M)}) = \sum_{m = 1}^{M}{\frac{1}{M} \mathcal{H}(\hat{p}^{(m)}, \widetilde{p}^{(m)})} \\
@@ -288,21 +276,6 @@ The results of the experiments of \ref{sec:benchmark} are evaluated using the fo
 
 This is the simplest of the benchmark problems, the task is simply to learn a constant time lag from the training data. On the test data set for this problem, the model predicts the correct time lag for $99.92\%$ of the samples. With respect to prediction of the outputs, the model has a \emph{mean absolute error} of $6.904677$ and achieves a Pearson correlation coefficient of $0.9795$. The model is thus able to learn the input-output and time lag mappings easily for this problem.
 
-\subsubsection{Problem II}
-
-Figure \ref{fig:problem2_scatter} shows a scatter plot between the output value and associated time lag, it compares the scatter distribution generated by the model and compares it with the distribution seen in the test data. 
-
-In figure \ref{fig:problem2_curves} we present smoothed trends extracted from the data presented in \ref{fig:problem2_scatter}, the red curve represents the output time lag function learned by the model while the black curve is the \emph{ground truth} dependence between the two. 
-
-We can see that the model is able to approximate the inverse relationship between the output and time lag from the training data.
-
-\subsubsection{Problem III}
-
-Problem III involves a more complicated output time lag relationship than problem II due to the effect of acceleration. From figures \ref{fig:problem3_scatter} and \ref{fig:problem3_error}, it can be observed that the model can still learn the time lag and output mappings although in this case the time lag error distribution has a longer tail in figure \ref{fig:problem3_error} as compared to \ref{fig:problem2_error}.
-
-\subsubsection{Problem IV}
-
-
 \begin{figure}[h]
 \vspace{.3in}
 \centerline{\includegraphics[width=0.5\textwidth]{figures/exp2_scatter_v_tl.png}}
@@ -329,6 +302,14 @@ Problem III involves a more complicated output time lag relationship than proble
 
 
 
+\subsubsection{Problem II}
+
+Figure \ref{fig:problem2_scatter} shows a scatter plot between the output value and associated time lag, it compares the scatter distribution generated by the model and compares it with the distribution seen in the test data. 
+
+In figure \ref{fig:problem2_curves} we present smoothed trends extracted from the data presented in \ref{fig:problem2_scatter}, the red curve represents the output time lag function learned by the model while the black curve is the \emph{ground truth} dependence between the two. 
+
+We can see that the model is able to approximate the inverse relationship between the output and time lag from the training data.
+
 \begin{figure}[h]
 \vspace{.3in}
 \centerline{\includegraphics[width=0.5\textwidth]{figures/exp3_scatter_v_tl.png}}
@@ -352,6 +333,45 @@ Problem III involves a more complicated output time lag relationship than proble
 \caption{\textbf{Problem III}, Output vs Time Lag Relationship}
 \label{fig:problem3_curves}
 \end{figure}
+
+
+\subsubsection{Problem III}
+
+Problem III involves a more complicated output time lag relationship than problem II due to the effect of acceleration. From figures \ref{fig:problem3_scatter} and \ref{fig:problem3_error}, it can be observed that the model can still learn the time lag and output mappings although in this case the time lag error distribution has a slightly longer tail in figure \ref{fig:problem3_error} as compared to \ref{fig:problem2_error}.
+
+One observation common to the results of problems II and III is that the error distribution of the time lag is asymmetric, the model tends to underestimate the time lag. Upon closer examination of the predictions (figure \ref{fig:problem3_lag_error_jus}), it is observed that the data patterns for which the model has a time lag prediction error $\leq -2.5$, tend to occur in lower region of the output space (table \ref{table:problem3_stats}).
+
+\begin{figure}[h]
+\vspace{.3in}
+\centerline{\includegraphics[width=0.5\textwidth]{figures/exp3_lag_error_jus.png}}
+\vspace{.3in}
+\caption{\textbf{Problem III}, Predicted vs Actual Outputs for the cases with time lag error $\leq -2.5$.}
+\label{fig:problem3_lag_error_jus}
+\end{figure}
+
+
+\begin{table}[h]
+\caption{\textbf{Problem III}: Statistics of the Output distribution} \label{table:problem3_stats}
+\begin{center}
+\begin{tabular}{ll}
+\textbf{Statistic}  &\textbf{Value} \\
+\hline \\
+Minimum         & $111.7$ \\
+$1$st Quartile  & $182.3$ \\
+Median          & $252.1$ \\
+$3$rd Quartile  & $334.5$ \\
+Maximum         & $687.4$ \\
+\end{tabular}
+\end{center}
+\end{table}
+
+
+\subsubsection{Problem IV}
+
+
+
+
+
 
 
 \begin{figure}[h]
